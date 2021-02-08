@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -78,7 +79,11 @@ public class EventHubProcessor implements IEventProcessor {
         try (DataParser parser = dataParserFactory.getParser(requestId, eventData.getBytes())) {
           Record parsedRecord = parser.parse();
           while (parsedRecord != null) {
-            records.add(parsedRecord);
+            Map<String, Object> messageProperties = eventData.getProperties();
+            Record finalParsedRecord = parsedRecord;
+            messageProperties.forEach((key, value) -> finalParsedRecord.getHeader().setAttribute(key, value == null ? "" : value.toString()));
+
+            records.add(finalParsedRecord);
             parsedRecord = parser.parse();
           }
           for (Record record : records) {
